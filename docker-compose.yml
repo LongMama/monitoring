@@ -1,0 +1,78 @@
+version: "3.9"
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.28.1
+    container_name: prometheus
+    expose:
+      - 9090
+    volumes:
+      - prometheus-data:/prometheus
+      - ./prometheus:/etc/prometheus
+
+  node-exporter:
+    image: prom/node-exporter:v1.2.0
+    container_name: nodeexporter
+    expose:
+      - 9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude'
+      - '^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)'
+
+  cadvisor:
+    image: google/cadvisor:latest
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run/:/var/run/:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    expose:
+      - 8080
+
+  alertmanager:
+    image: prom/alertmanager:v0.20.0
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager:/etc/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    expose:
+      - 9093
+      
+  grafana:
+    image: grafana/grafana:8.0.6-ubuntu
+    container_name: grafana
+    expose:
+      - 3000
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      
+  caddy:
+    image: stefanprodan/caddy
+    container_name: caddy
+    ports:
+      - 3000:3000
+      - 9090:9090
+      - 9093:9093
+    volumes:
+      - ./caddy:/etc/caddy
+      - caddy_data:/data
+    environment:
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+
+volumes:
+  grafana-data:
+  grafana-configs:
+  prometheus-data:
+  prometheus:
+  caddy_data:

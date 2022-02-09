@@ -1,0 +1,11 @@
+route:
+    receiver: 'telegram'
+
+receivers:
+    - name: 'telegram'
+      slack_configs:
+          - send_resolved: true
+            text: "{{ .CommonAnnotations.description }}"
+            username: 'Prometheus'
+            channel: '#prometheus'
+            api_url: 'http://telegram.telegram.svc.cluster.local:8080/alert'
